@@ -7,7 +7,7 @@ Usage:
 1. Go to the folder where app.js is located.
 2. Install NodeJS if not already installed
 3. Execute: npm install
-4. Execute: node app.js <Stop Code e.g. E3158>
+4. Execute the following command where "E0011" is your own station code: node app.js E0011
 
 Screenshot from app:
 ![image](https://user-images.githubusercontent.com/33716618/155858151-268a737a-88e2-4b42-9d0b-eb133425df27.png)
