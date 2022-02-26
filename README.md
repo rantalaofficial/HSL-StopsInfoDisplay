@@ -1,5 +1,5 @@
 # HSL-StopsInfoDisplay
-This is a simple Node CLI app that displays any HSL station next departures. 
+This is a simple Node CLI app that displays any HSL station next departures in realtime. 
 
 This app could be used to e.g. make an always on info display so that you can easily see the departures on your home station.
 
