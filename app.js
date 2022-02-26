@@ -12,6 +12,10 @@ let latestData = null;
 let latestRefreshDate = null;
 let screenSaveOffset = { x: 0, y: 0 };
 
+let displayDelays = !(appArguments.length === 2 && appArguments[1] === 'delayoff') ;
+
+displayDelays ? '' : console.log('Displaying delays disabled.')
+
 let stop = {
     queryString: null,
     name: null,
@@ -24,8 +28,9 @@ function parseDepartures(data) {
     let departures = data.data.stop.stoptimesWithoutPatterns;
 
     return departures.map(departure => {
-        // Assumption that metro is never late
-        let delayMinutes = Math.floor(departure.departureDelay / 60)
+
+        let delayMinutes = displayDelays ? Math.floor(departure.departureDelay / 60) : 0;
+
         return {
             title: departure.headsign,
             delayMinutes: delayMinutes,
