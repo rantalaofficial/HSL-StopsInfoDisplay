@@ -11,7 +11,7 @@ Usage:
 5. Execute: node app
 
 Screenshot from app:
-![image](https://user-images.githubusercontent.com/33716618/156848580-95374729-94b7-4822-ba5e-a3c797eec359.png)
+![image](https://user-images.githubusercontent.com/33716618/156848876-de0c4a02-d56c-461a-a158-2195f0d523ac.png)
 
 
 
