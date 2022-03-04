@@ -170,8 +170,8 @@ function displayUpdateLoop() {
             latestRefreshDate = (new Date().getTime() / 1000);
 
             screenSaveOffset = {
-                x: " ".repeat(getRandom(0, 10)),
-                y: "\n".repeat(getRandom(0, 5))
+                x: " ".repeat(getRandom(0, 5)),
+                y: "\n".repeat(getRandom(0, 3))
             }
         }).catch(err => {
             console.error(err);
