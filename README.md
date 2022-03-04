@@ -7,11 +7,11 @@ Usage:
 1. Go to the folder where app.js is located.
 2. Install NodeJS if not already installed
 3. Execute: npm install
-4. Execute the following command where "E0011" is your own station code: node app.js E0011
-5. If you find to disable showing delays and show only scheduled departures use: node app.js E0011 delayoff
+4. Change the app settings in settings.js. Replace stopCode 'XXX' with your own stop code.
+5. Execute: node app
 
 Screenshot from app:
-![image](https://user-images.githubusercontent.com/33716618/155858151-268a737a-88e2-4b42-9d0b-eb133425df27.png)
+![image](https://user-images.githubusercontent.com/33716618/156848580-95374729-94b7-4822-ba5e-a3c797eec359.png)
 
 
 
