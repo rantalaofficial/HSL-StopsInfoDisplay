@@ -1,26 +1,10 @@
 const https = require('https');
 
-// Todo: remove global vars
-const appArguments = process.argv.slice(2);
-
-if (!appArguments[0] || appArguments.length === 0) {
-    console.log('App should be started with the following command:\nnode app.js <Stop Code e.g. E3158>');
-    return;
-}
+const settings = require('./settings')
 
 let latestData = null;
 let latestRefreshDate = null;
 let screenSaveOffset = { x: 0, y: 0 };
-
-let displayDelays = !(appArguments.length === 2 && appArguments[1] === 'delayoff') ;
-
-displayDelays ? '' : console.log('Displaying delays disabled.')
-
-let stop = {
-    queryString: null,
-    name: null,
-    code: null,
-};
 
 function parseDepartures(data) {
     data = JSON.parse(data);
@@ -29,10 +13,10 @@ function parseDepartures(data) {
 
     return departures.map(departure => {
 
-        let delayMinutes = displayDelays ? Math.floor(departure.departureDelay / 60) : 0;
+        let delayMinutes = settings.showDelays ? Math.floor(departure.departureDelay / 60) : 0;
 
         return {
-            title: departure.headsign,
+            headsign: departure.headsign,
             delayMinutes: delayMinutes,
             estimatedTime: departure.serviceDay + departure.scheduledDeparture + delayMinutes * 60
         }
@@ -121,7 +105,12 @@ function getSearchStopQuery(stopCode) {
               gtfsId
               name
               code
-              platformCode
+              patterns {
+                headsign
+                route {
+                  shortName
+                }
+              }
             }
           }`
     })
@@ -131,18 +120,36 @@ function getStopDepartureQuery(stopID) {
     return JSON.stringify({
         query: `{
             stop(id: "${stopID}") {
-              name
                 stoptimesWithoutPatterns {
                 headsign
                 serviceDay
                 scheduledDeparture
                 departureDelay
-                realtime
-                realtimeState
               }
             }
           }`
     });
+}
+
+function getDepartureName(stop, headsign) {
+    // TODO: Find better solution to this:
+    // This function tries to fix the problem when sometimes headisgns are not same matching with route shortNames.
+
+    let s1, s2;
+    s2 = headsign.toLowerCase();
+
+    for (var key in stop) {
+        if (stop.hasOwnProperty(key)) {
+            s1 = key.toLowerCase()
+            
+            if (s1.includes(s2) || s2.includes(s1)) {
+                return `${stop[key]} ${settings.showLongNames ? `${headsign} ` : ''}`
+            }
+        }
+    }
+
+    // Fallback to headsign only
+    return headsign;
 }
 
 function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenSaveOffset) {
@@ -150,19 +157,28 @@ function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenS
     console.log(screenSaveOffset.y);
 
     console.log(`${screenSaveOffset.x}${stop.name} ${stop.code} Next Departures:\n`);
-    departures.forEach(d => {
-        if (d.delayMinutes === 0) {
-            console.log(`${screenSaveOffset.x}${d.title} at ${getHoursString(d.estimatedTime)} in ${getTimeUntilString(d.estimatedTime)}`);
-        } else {
-            let delayString = d.delayMinutes < 0 ? 'early' : 'late';
-            console.log(`${screenSaveOffset.x}${d.title} at ${getHoursString(d.estimatedTime)} in ${getTimeUntilString(d.estimatedTime)}, ${Math.abs(d.delayMinutes)}min ${delayString}`);
-        }
+
+    // This variable gets the longest first part length so that all times are padded inline
+    let longestFirstPart = 0;
+    let departureTexts = departures.map(d => {
+        let firstPart = `${screenSaveOffset.x}${getDepartureName(stop, d.headsign)}`
+        let secondPart = `at ${getHoursString(d.estimatedTime)} in ${getTimeUntilString(d.estimatedTime)}`
+
+        if (d.delayMinutes > 0) secondPart += `, ${Math.abs(d.delayMinutes)}min ${d.delayMinutes < 0 ? 'early' : 'late'}`;
+
+        if (firstPart.length > longestFirstPart) longestFirstPart = firstPart.length
+
+        return {firstPart, secondPart}
+    });
+
+    departureTexts.forEach(d => {
+        console.log(d.firstPart.padEnd(longestFirstPart) + d.secondPart);
     });
 
     console.log(`\n${screenSaveOffset.x}Last HSL API refresh ${getTimeUntilString(latestRefreshDateInEpochSeconds)} ago.`)
 }
 
-function displayUpdateLoop() {
+function displayUpdateLoop(stop) {
     // Requests new data if earliest departure is in the next 60 seconds.
     if (!latestData || latestData.length === 0 || getTimeUntil(latestData[0].estimatedTime) < 60) {
         makePostRequest(stop.queryString).then(data => {
@@ -170,8 +186,8 @@ function displayUpdateLoop() {
             latestRefreshDate = (new Date().getTime() / 1000);
 
             screenSaveOffset = {
-                x: " ".repeat(getRandom(0, 5)),
-                y: "\n".repeat(getRandom(0, 3))
+                x: " ".repeat(getRandom(0, 10)),
+                y: "\n".repeat(getRandom(0, 5))
             }
         }).catch(err => {
             console.error(err);
@@ -182,25 +198,30 @@ function displayUpdateLoop() {
 }
 
 console.log('Finding stop...')
-makePostRequest(getSearchStopQuery(appArguments[0])).then(data => {
+makePostRequest(getSearchStopQuery(settings.stopCode)).then(data => {
     data = JSON.parse(data);
 
     let stops = data.data.stops;
     if (!stops || stops.length === 0 || !stops[0].hasOwnProperty('gtfsId')) {
-        console.log(`Could not find stop with code ${appArguments[0]}`)
+        console.log(`Could not find stop with code ${settings.stopCode}`)
     } else {
-        stop = {
+        let stop = {
             queryString: getStopDepartureQuery(stops[0].gtfsId),
             name: stops[0].name,
             code: stops[0].code,
         }
 
+        // Maps headsign data to it's corresponding short name
+        stops[0].patterns.forEach(pattern => {
+            stop[pattern.headsign] = pattern.route.shortName
+        });
+
         // Start loop;
-        setInterval(displayUpdateLoop, 5 * 1000);
-        displayUpdateLoop();
+        setInterval(() => displayUpdateLoop(stop), 5 * 1000);
+        displayUpdateLoop(stop);
     }
 }).catch(err => {
-    console.log(`Could not find stop with code ${appArguments[0]}:`)
+    console.log(`Could not find stop with code ${settings.stopCode}:`)
     console.log(err);
 })
 
