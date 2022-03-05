@@ -1,5 +1,7 @@
 module.exports = {
-    stopCode: 'H0295',
+    stopCode: 'H0302',
     showDelays: true,
-    showLongNames: true,
+    showLongNames: false,
+    displayUpdateInterval: 5,
+    apiRequestCooldown: 20,
 }
