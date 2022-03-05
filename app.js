@@ -1,5 +1,4 @@
 const https = require('https');
-
 const settings = require('./settings')
 
 let latestData = null;
@@ -156,7 +155,7 @@ function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenS
     console.clear();
     console.log(screenSaveOffset.y);
 
-    console.log(`${screenSaveOffset.x}${stop.name} ${stop.code} Next Departures:\n`);
+    console.log(`${screenSaveOffset.x}${stop.name} ${stop.code} Departures:\n`);
 
     // This variable gets the longest first part length so that all times are padded inline
     let longestFirstPart = 0;
@@ -175,12 +174,12 @@ function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenS
         console.log(d.firstPart.padEnd(longestFirstPart) + d.secondPart);
     });
 
-    console.log(`\n${screenSaveOffset.x}Last HSL API refresh ${getTimeUntilString(latestRefreshDateInEpochSeconds)} ago.`)
+    console.log(`\n${screenSaveOffset.x}HSL API refresh ${getTimeUntilString(latestRefreshDateInEpochSeconds)} ago.`)
 }
 
 function displayUpdateLoop(stop) {
-    // Requests new data if earliest departure is in the next 60 seconds.
-    if (!latestData || latestData.length === 0 || getTimeUntil(latestData[0].estimatedTime) < 60) {
+    // Requests new data if earliest departure is in the next 20 seconds.
+    if (!latestData || latestData.length === 0 || getTimeUntil(latestData[0].estimatedTime) < 20) {
         makePostRequest(stop.queryString).then(data => {
             latestData = parseDepartures(data);
             latestRefreshDate = (new Date().getTime() / 1000);
