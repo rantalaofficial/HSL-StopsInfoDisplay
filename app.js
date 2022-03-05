@@ -195,8 +195,6 @@ function displayUpdateLoop(stop) {
     }
 
     if (latestData) printDisplay(stop, latestData, latestRefreshDate, screenSaveOffset)
-    console.log(getTimeUntil(latestData[0].estimatedTime))
-    console.log( -getTimeUntil(latestRefreshDate))
 }
 
 console.log('Finding stop...')
