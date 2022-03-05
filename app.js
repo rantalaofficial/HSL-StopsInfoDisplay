@@ -148,7 +148,7 @@ function getDepartureName(stop, headsign) {
     }
 
     // Fallback to headsign only
-    return headsign;
+    return `${headsign} `;
 }
 
 function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenSaveOffset) {
@@ -178,15 +178,16 @@ function printDisplay(stop, departures, latestRefreshDateInEpochSeconds, screenS
 }
 
 function displayUpdateLoop(stop) {
-    // Requests new data if earliest departure is in the next 20 seconds.
-    if (!latestData || latestData.length === 0 || getTimeUntil(latestData[0].estimatedTime) < 20) {
+    // Requests new data if earliest departure is smaller than the api request cooldown.
+    
+    if (!latestData || latestData.length === 0 || (getTimeUntil(latestData[0].estimatedTime) < settings.apiRequestCooldown && -getTimeUntil(latestRefreshDate) > settings.apiRequestCooldown)) {
         makePostRequest(stop.queryString).then(data => {
             latestData = parseDepartures(data);
             latestRefreshDate = (new Date().getTime() / 1000);
 
             screenSaveOffset = {
-                x: " ".repeat(getRandom(0, 10)),
-                y: "\n".repeat(getRandom(0, 5))
+                x: " ".repeat(getRandom(0, 5)),
+                y: "\n".repeat(getRandom(0, 3))
             }
         }).catch(err => {
             console.error(err);
@@ -194,6 +195,8 @@ function displayUpdateLoop(stop) {
     }
 
     if (latestData) printDisplay(stop, latestData, latestRefreshDate, screenSaveOffset)
+    console.log(getTimeUntil(latestData[0].estimatedTime))
+    console.log( -getTimeUntil(latestRefreshDate))
 }
 
 console.log('Finding stop...')
@@ -216,7 +219,7 @@ makePostRequest(getSearchStopQuery(settings.stopCode)).then(data => {
         });
 
         // Start loop;
-        setInterval(() => displayUpdateLoop(stop), 5 * 1000);
+        setInterval(() => displayUpdateLoop(stop), settings.displayUpdateInterval * 1000);
         displayUpdateLoop(stop);
     }
 }).catch(err => {
